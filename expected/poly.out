@@ -350,11 +350,11 @@ SELECT spoly(NULL::spoint[]);
 (1 row)
 
 SELECT spoly(ARRAY[]::spoint[]);
-ERROR:  spherepoly_from_point_array: invalid number of arguments (must be >= 3)
+ERROR:  spherepoly_from_point_array: invalid number of arguments (must be >= 3) (polygon.c:1019)
 SELECT spoly(ARRAY[spoint_deg(0, 0)]);
-ERROR:  spherepoly_from_point_array: invalid number of arguments (must be >= 3)
+ERROR:  spherepoly_from_point_array: invalid number of arguments (must be >= 3) (polygon.c:1019)
 SELECT spoly(ARRAY[spoint_deg(0, 0), spoint_deg(10, 0)]);
-ERROR:  spherepoly_from_point_array: invalid number of arguments (must be >= 3)
+ERROR:  spherepoly_from_point_array: invalid number of arguments (must be >= 3) (polygon.c:1019)
 SELECT spoly(ARRAY[spoint_deg(0, 0), spoint_deg(10, 0), spoint_deg(10, 10)]);
                spoly                
 ------------------------------------
@@ -369,15 +369,15 @@ SELECT spoly(ARRAY[spoint_deg(0, 0), spoint_deg(10, 0), spoint_deg(10, 10), spoi
 
 --- incorrect input -----
 SELECT spoly '{(10d,0d),(10d,1d)}';
-ERROR:  spherepoly_in: more than two points needed
+ERROR:  spherepoly_in: more than two points needed (polygon.c:902)
 LINE 1: SELECT spoly '{(10d,0d),(10d,1d)}';
                      ^
 SELECT spoly(ARRAY[1.0, 2.0, 3.0, 4.0, 5.0]);
-ERROR:  spherepoly_rad: invalid number of arguments (must be even and >= 6)
+ERROR:  spherepoly_rad: invalid number of arguments (must be even and >= 6) (polygon.c:931)
 SELECT spoly(ARRAY[1.0, 2.0, 3.0, NULL, 5.0, 6.0]);
-ERROR:  spherepoly_rad: input array is invalid because it has null values
+ERROR:  spherepoly_rad: input array is invalid because it has null values (polygon.c:923)
 SELECT spoly(ARRAY[]::float8[]);
-ERROR:  spherepoly_rad: invalid number of arguments (must be even and >= 6)
+ERROR:  spherepoly_rad: invalid number of arguments (must be even and >= 6) (polygon.c:931)
 SELECT spoly(NULL::float8[]);
  spoly 
 -------
@@ -385,11 +385,11 @@ SELECT spoly(NULL::float8[]);
 (1 row)
 
 SELECT spoly_deg(ARRAY[1.0, 2.0, 3.0, 4.0, 5.0]);
-ERROR:  spherepoly_deg: invalid number of arguments (must be even and >= 6)
+ERROR:  spherepoly_deg: invalid number of arguments (must be even and >= 6) (polygon.c:981)
 SELECT spoly_deg(ARRAY[1.0, 2.0, 3.0, NULL, 5.0, 6.0]);
-ERROR:  spherepoly_deg: input array is invalid because it has null values
+ERROR:  spherepoly_deg: input array is invalid because it has null values (polygon.c:973)
 SELECT spoly_deg(ARRAY[]::float8[]);
-ERROR:  spherepoly_deg: invalid number of arguments (must be even and >= 6)
+ERROR:  spherepoly_deg: invalid number of arguments (must be even and >= 6) (polygon.c:981)
 SELECT spoly_deg(NULL::float8[]);
  spoly_deg 
 -----------
@@ -398,7 +398,7 @@ SELECT spoly_deg(NULL::float8[]);
 
 --- self-crossing input -----
 SELECT spoly '{(0d,0d),(10d,10d),(0d,10d),(10d,0d)}';
-ERROR:  spherepoly_from_array: a line segment overlaps or polygon too large
+ERROR:  spherepoly_from_array: a line segment overlaps or polygon too large (polygon.c:248)
 LINE 1: SELECT spoly '{(0d,0d),(10d,10d),(0d,10d),(10d,0d)}';
                      ^
 --- degenerate polygons -----

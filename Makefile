@@ -44,6 +44,7 @@ TESTS       = version tables points euler circle line ellipse poly path box \
               epochprop contains overlaps spoint_brin sbox_brin selectivity \
               knn output_precision
 REGRESS     = init $(TESTS)
+REGRESS_OPTS = --init-file=init_file
 
 PG_CFLAGS	+= -DPGSPHERE_VERSION=$(PGSPHERE_VERSION)
 PG_CPPFLAGS	+= -DPGSPHERE_VERSION=$(PGSPHERE_VERSION)
