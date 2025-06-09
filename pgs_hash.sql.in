@@ -5,10 +5,12 @@ CREATE FUNCTION spoint_hash32 (spoint)
    LANGUAGE C
    AS 'MODULE_PATHNAME', 'spherepoint_hash32';
 
+set allow_system_table_mods=true;
 UPDATE pg_operator
    SET oprcanhash = true
    WHERE oprname = '=' AND
      oprleft = 'spoint'::regtype AND oprright = 'spoint'::regtype;
+set allow_system_table_mods=false;
 
 /* PG17: ALTER OPERATOR = (spoint, spoint) SET (HASHES); */
 

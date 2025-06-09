@@ -7,6 +7,7 @@ SELECT set_sphere_output_precision(8);
 CREATE TABLE test_boxes (
     b sbox
 );
+NOTICE:  Table doesn't have 'DISTRIBUTED BY' clause, and no column type is suitable for a distribution key. Creating a NULL policy entry.
 COPY test_boxes (b) FROM stdin;
 CREATE OR REPLACE FUNCTION qnodes(q text) RETURNS text
 LANGUAGE 'plpgsql' AS

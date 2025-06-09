@@ -33,9 +33,9 @@ CREATE TABLE spheretmp6 (id int PRIMARY KEY , p spath );
 
 SELECT set_sphere_output_precision(12);
 
-CREATE TABLE spheretmp7 (p spoint);
+CREATE TABLE spheretmp7 (p spoint) DISTRIBUTED REPLICATED;
 \copy spheretmp7 from 'data/test_spherepolygon_aggregate.data'
 SELECT spoly(p) FROM spheretmp7;
-CREATE TABLE spheretmp8 (p spoint);
+CREATE TABLE spheretmp8 (p spoint) DISTRIBUTED REPLICATED;
 \copy spheretmp8 from 'data/test_spherepoint.data'
 SELECT spath(p) FROM spheretmp8 WHERE p IS NOT NULL;
