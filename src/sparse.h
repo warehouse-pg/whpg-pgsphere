@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_SPHERE_YY_SPARSE_H_INCLUDED
-# define YY_SPHERE_YY_SPARSE_H_INCLUDED
+#ifndef YY_SPHERE_YY_SRC_SPARSE_H_INCLUDED
+# define YY_SPHERE_YY_SRC_SPARSE_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -60,9 +60,9 @@ extern int sphere_yydebug;
     CLOSEPOINT = 266,
     OPENARR = 267,
     CLOSEARR = 268,
-    SIGN = 269,
-    INT = 270,
-    FLOAT = 271,
+    TOK_SIGN = 269,
+    TOK_INT = 270,
+    TOK_FLOAT = 271,
     EULERAXIS = 272
   };
 #endif
@@ -78,22 +78,22 @@ extern int sphere_yydebug;
 #define CLOSEPOINT 266
 #define OPENARR 267
 #define CLOSEARR 268
-#define SIGN 269
-#define INT 270
-#define FLOAT 271
+#define TOK_SIGN 269
+#define TOK_INT 270
+#define TOK_FLOAT 271
 #define EULERAXIS 272
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 41 "sparse.y"
+#line 41 "src/sparse.y"
 
 	int		i;
 	double	d;
 	char	c[3];
 
-#line 97 "sparse.h"
+#line 97 "src/sparse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -106,4 +106,4 @@ extern YYSTYPE sphere_yylval;
 
 int sphere_yyparse (void);
 
-#endif /* !YY_SPHERE_YY_SPARSE_H_INCLUDED  */
+#endif /* !YY_SPHERE_YY_SRC_SPARSE_H_INCLUDED  */
