@@ -31,4 +31,9 @@ s/ERROR:  spherepoly_rad: input array is invalid because it has null values \(.*
 
 m/ERROR:  spherepoly_deg: input array is invalid because it has null values \(.*\)/
 s/ERROR:  spherepoly_deg: input array is invalid because it has null values \(.*\)/ERROR:  spherepoly_deg: input array is invalid because it has null values/
+# MOC errors are raised with ERRCODE_INTERNAL_ERROR, so Greenplum appends the
+# source location to the message.
+m/ERROR:  MOC processing error: .* \(moc\.c:[0-9]+\)/
+s/(ERROR:  MOC processing error: .*) \(moc\.c:[0-9]+\)/$1/
+
 -- end_matchsubs
