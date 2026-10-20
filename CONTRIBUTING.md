@@ -1,20 +1,58 @@
-First off, thanks for taking the time to contribute! ❤️
+# Contributing
 
-All types of contributions are encouraged and valued. See the Table of Contents for different ways to help and details about how this project handles them. Please make sure to read the relevant section before making your contribution. It will make it a lot easier for us maintainers and smooth out the experience for all involved. The community looks forward to your contributions.
+We warmly welcome and greatly appreciate contributions from the
+community. By participating you agree to the [code of
+conduct](https://github.com/warehouse-pg/whpg-pgsphere/blob/whpg/CODE-OF-CONDUCT.md).
+Overall, we follow WHPG's comprehensive contribution policy. Please
+refer to it [here](https://github.com/warehouse-pg/warehouse-pg/blob/main/CONTRIBUTING.md)
+for details.
 
-# Table of Contents
-- [Project Scope](#project-scope)
-- [Development Plans](#development-plans)
+## Getting Started
 
-# Project Scope
-- Types.
-- Operations on types (creating, searching, sorting, set operations and others).
-- Indexing structures and algorithms.
+* Fork the `whpg-pgsphere` repository on GitHub
+* Clone the forked repository
+* Follow the README to set up your environment and run the tests
 
-# Development Plans
-- Move all source files into src folder.
-- Implement optional compilation with HEALPIX and SMOC.
-- Use pgindent to format sources.
-- Check compilation with newest postgrespro versions.
-- Add more tests including performance tests.
-- Add more documentation.
+## Creating a change
+
+* Create your own feature branch (e.g. `git checkout -b
+  my_feature_branch`) and make changes on this branch.
+* Try and follow similar coding styles as found throughout the code
+  base.
+* Make commits as logical units for ease of reviewing.
+* Rebase with `whpg` often to stay in sync with upstream.
+* Add or update tests to cover your code. Build with `make
+  USE_HEALPIX=0` against a WarehousePG installation whose `pg_config`
+  is on your `PATH`, then run `make USE_HEALPIX=0 install` and
+  `PGOPTIONS='-c optimizer=off' make USE_HEALPIX=0 installcheck`
+  against a running WarehousePG cluster. Regression tests live under
+  [`sql`](sql) and [`expected`](expected).
+* Keep changes working on every supported WarehousePG line (7 and
+  19). Where only some lines or platforms produce different output, add
+  an alternative expected file (e.g. `expected/selectivity_4.out`).
+* Ensure a well written commit message as explained
+  [here](https://chris.beams.io/posts/git-commit/).
+* Push your local branch to the fork (e.g. `git push <your_fork>
+  my_feature_branch`)
+
+## Submitting a Pull Request
+
+* Create a [pull request from your
+  fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork).
+* Address PR feedback with fixup and/or squash commits:
+```
+git add .
+git commit --fixup <commit SHA>
+  -- or --
+git commit --squash <commit SHA>
+```
+* Once approved, before merging into `whpg` squash your fixups with:
+```
+git rebase -i --autosquash origin/whpg
+git push --force-with-lease $USER <my-feature-branch>
+```
+
+Your contribution will be analyzed for product fit and engineering
+quality prior to merging. Your pull request is much more likely to be
+accepted if it is small and focused with a clear message that conveys
+the intent of your change.
