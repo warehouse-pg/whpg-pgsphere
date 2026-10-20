@@ -22,7 +22,9 @@ WarehousePG `pg_config` on your `PATH`:
 ```
 make USE_HEALPIX=0
 make USE_HEALPIX=0 install         # may need root to write into $GPHOME
-make USE_HEALPIX=0 installcheck    # needs a running WarehousePG cluster
+# needs a running WarehousePG cluster; the regression output assumes the
+# Postgres planner, so turn GPORCA off as the packaging smoke test does
+PGOPTIONS='-c optimizer=off' make USE_HEALPIX=0 installcheck
 ```
 
 Then load the extension with `CREATE EXTENSION pg_sphere;`.

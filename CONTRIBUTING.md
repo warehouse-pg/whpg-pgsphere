@@ -24,10 +24,10 @@ for details.
 * Add or update tests to cover your code. Build with `make
   USE_HEALPIX=0` against a WarehousePG installation whose `pg_config`
   is on your `PATH`, then run `make USE_HEALPIX=0 install` and
-  `make USE_HEALPIX=0 installcheck` against a running WarehousePG
-  cluster. Regression tests live under [`sql`](sql) and
-  [`expected`](expected).
-* Keep changes working on every supported WarehousePG line (6, 7 and
+  `PGOPTIONS='-c optimizer=off' make USE_HEALPIX=0 installcheck`
+  against a running WarehousePG cluster. Regression tests live under
+  [`sql`](sql) and [`expected`](expected).
+* Keep changes working on every supported WarehousePG line (7 and
   19). Where only some lines or platforms produce different output, add
   an alternative expected file (e.g. `expected/selectivity_4.out`).
 * Ensure a well written commit message as explained
