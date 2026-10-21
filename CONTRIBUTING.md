@@ -20,7 +20,7 @@ for details.
 * Try and follow similar coding styles as found throughout the code
   base.
 * Make commits as logical units for ease of reviewing.
-* Rebase with `whpg` often to stay in sync with upstream.
+* Rebase on `origin/whpg` often to stay in sync.
 * Add or update tests to cover your code. Build with `make
   USE_HEALPIX=0` against a WarehousePG installation whose `pg_config`
   is on your `PATH`, then run `make USE_HEALPIX=0 install` and
@@ -49,7 +49,7 @@ git commit --squash <commit SHA>
 * Once approved, before merging into `whpg` squash your fixups with:
 ```
 git rebase -i --autosquash origin/whpg
-git push --force-with-lease $USER <my-feature-branch>
+git push --force-with-lease <your_fork> my_feature_branch
 ```
 
 Your contribution will be analyzed for product fit and engineering
