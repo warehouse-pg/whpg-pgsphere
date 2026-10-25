@@ -96,10 +96,39 @@ moc_error_out(const char *message, int type)
 			errmsg("MOC processing error: %s", message)));
 }
 
+/*
+ * Largest value readNumber() accepts: the number of Healpix pixels at the
+ * maximum order. No valid Healpix order or index can be larger, and bounding
+ * the accumulator this way also rules out signed 64-bit overflow while the
+ * digits are being read. MOC_NUMBER_TOO_LARGE is what readNumber() returns
+ * for a number above that bound; it can never be produced by a valid input.
+ */
+#define MOC_MAX_NUMBER			((hpint64) 12 << (2 * HEALPIX_MAX_ORDER))
+#define MOC_NUMBER_TOO_LARGE	((hpint64) 0x7FFFFFFFFFFFFFFFLL)
+
 static bool
-index_invalid(hpint64 npix, long index)
+index_invalid(hpint64 npix, hpint64 index)
 {
 	return index < 0 || index >= npix;
+}
+
+/*
+ * Error out, releasing the parse context first like the other error paths in
+ * smoc_in(), if readNumber() reported a number too large to be a Healpix order
+ * or index.
+ */
+static void
+check_number_too_large(hpint64 nb, int ind, void *moc_in_context)
+{
+	if (nb == MOC_NUMBER_TOO_LARGE)
+	{
+		release_moc_in_context(moc_in_context, moc_error_out);
+		ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+				errmsg("[c.%d] Healpix number too large.", ind - 1),
+				errhint("A Healpix order must be between 0 and %d, and a "
+						"Healpix index must be smaller than " MOC_FORMAT_64 ".",
+						HEALPIX_MAX_ORDER, MOC_MAX_NUMBER)));
+	}
 }
 
 static int
@@ -131,6 +160,7 @@ smoc_in(PG_FUNCTION_ARGS)
 	while (input_text[ind] != '\0')
 	{
 		nb = readNumber(input_text, &ind);
+		check_number_too_large(nb, ind, moc_in_context);
 		c = readChar(input_text, &ind);
 
 		if (c == '/') /* nb is a Healpix order */
@@ -146,7 +176,7 @@ smoc_in(PG_FUNCTION_ARGS)
 								"{healpix_order} is between 0 and 29. Example: "
 								"'1/0 2/3,5-10'.")));
 			}
-			else if (order_invalid((int) nb))
+			else if (nb > HEALPIX_MAX_ORDER || order_invalid((int) nb))
 			{
 				release_moc_in_context(moc_in_context, moc_error_out);
 				ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
@@ -176,6 +206,7 @@ smoc_in(PG_FUNCTION_ARGS)
 		else if (c == '-')  /* next Healpix number must follow */
 		{
 			nb2 = readNumber(input_text, &ind);
+			check_number_too_large(nb2, ind, moc_in_context);
 			if (nb2 == -1)
 			{
 				release_moc_in_context(moc_in_context, moc_error_out);
@@ -319,7 +350,8 @@ smoc_in(PG_FUNCTION_ARGS)
  *                  This value is incremented at each read character.
  * 
  * @return  The read number,
- *          or -1 if no digit has been found.
+ *          -1 if no digit has been found,
+ *          or MOC_NUMBER_TOO_LARGE if the number exceeds MOC_MAX_NUMBER.
  */
 hpint64 readNumber(const char* mocAscii, int* start)
 {
@@ -334,7 +366,17 @@ hpint64 readNumber(const char* mocAscii, int* start)
   if (mocAscii[*start] != '\0' && isdigit(mocAscii[*start])){
     nb = 0;
     do{
-      nb = nb*10 + (long)(mocAscii[*start]-48);
+      int digit = mocAscii[*start] - '0';
+
+      /* Too large to be a Healpix order or index. Consume the remaining
+       * digits so the caller's position stays consistent, and report the
+       * value as out of range instead of letting the accumulator overflow. */
+      if (nb > (MOC_MAX_NUMBER - digit) / 10){
+        while(isdigit(mocAscii[*start]))
+          (*start)++;
+        return MOC_NUMBER_TOO_LARGE;
+      }
+      nb = nb*10 + digit;
       (*start)++;
     }while(isdigit(mocAscii[*start]) && mocAscii[*start] != '\0');
   }
@@ -381,7 +423,7 @@ Datum
 set_smoc_output_type(PG_FUNCTION_ARGS)
 {
 	int32	out_type = PG_GETARG_INT32(0);
-	char	*buffer	= (char *) palloc(80);
+	char	*buffer	= NULL;
 	if (out_type < 0)
 		out_type = 0;
 	if (out_type > 1)
@@ -390,10 +432,10 @@ set_smoc_output_type(PG_FUNCTION_ARGS)
 	switch (smoc_output_type)
 	{
 		case 0:
-			sprintf(buffer, "Set output type to MOC-ASCII (0).");
+			buffer = pstrdup("Set output type to MOC-ASCII (0).");
 			break;
 		case 1:
-			sprintf(buffer, "Set output type to MOC intervals (1).");
+			buffer = pstrdup("Set output type to MOC intervals (1).");
 			break;
 		default:
 			moc_error_out("set_smoc_output_type()", 0);
