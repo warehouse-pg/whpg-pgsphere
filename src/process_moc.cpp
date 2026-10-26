@@ -14,7 +14,9 @@
 #include <stdexcept>
 #include <cxxabi.h> /* __cxa_current_exception_type */
 
+#ifndef PGS_NO_HEALPIX_CXX
 #include <healpix_base.h>
+#endif
 
 #include "pgs_process_moc.h"
 #include "pgs_util.h"
@@ -31,6 +33,17 @@
 // PGS_TRY / PGS_CATCH: use an additional 'do {} while (0);' to allow for
 // 'break;' as an alternative to 'return;'
 
+#ifdef PGS_NO_HEALPIX_CXX
+#define PGS_CATCH_PLANCK
+#else
+#define PGS_CATCH_PLANCK						\
+	catch (PlanckError & e)					\
+	{										\
+		delete p;							\
+		error_out(e.what(), 0);				\
+	}
+#endif
+
 #define PGS_TRY try	{ do {
 #define PGS_CATCH 	} while (0); }			\
 	catch (std::exception & e)				\
@@ -38,11 +51,7 @@
 		delete p;							\
 		error_out(e.what(), 0);				\
 	}										\
-	catch (PlanckError & e)				\
-	{										\
-		delete p;							\
-		error_out(e.what(), 0);				\
-	}										\
+	PGS_CATCH_PLANCK						\
 	catch (...)								\
 	{										\
 		delete p;							\
@@ -993,6 +1002,11 @@ moc_disc(void* moc_in_context, int order, double theta, double phi, double radiu
 												pgs_error_handler error_out)
 {
 	moc_input* p = static_cast<moc_input*>(moc_in_context);
+#ifdef PGS_NO_HEALPIX_CXX
+	/* Nothing to compute; free the context like PGS_CATCH does before raising. */
+	delete p;
+	error_out("smoc from a disc is not available: pgsphere was built without libhealpix_cxx", 0);
+#else
 	moc_input & m = *p;
 	PGS_TRY
 		rangeset<int64> pixset;
@@ -1013,6 +1027,7 @@ moc_disc(void* moc_in_context, int order, double theta, double phi, double radiu
 
 		m.order = order;
 	PGS_CATCH
+#endif
 }
 
 void
@@ -1020,6 +1035,11 @@ moc_polygon(void* moc_in_context, int order, int32 npts, float8 *polygon,
 												pgs_error_handler error_out)
 {
 	moc_input* p = static_cast<moc_input*>(moc_in_context);
+#ifdef PGS_NO_HEALPIX_CXX
+	/* Nothing to compute; free the context like PGS_CATCH does before raising. */
+	delete p;
+	error_out("smoc from a polygon is not available: pgsphere was built without libhealpix_cxx", 0);
+#else
 	moc_input & m = *p;
 	PGS_TRY
 		rangeset<int64> pixset;
@@ -1047,4 +1067,5 @@ moc_polygon(void* moc_in_context, int order, int32 npts, float8 *polygon,
 
 		m.order = order;
 	PGS_CATCH
+#endif
 }
