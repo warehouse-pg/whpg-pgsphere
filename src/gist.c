@@ -99,11 +99,11 @@ spherekey_out(PG_FUNCTION_ARGS)
 {
 	const float8	ks = (float8) MAXCVALUE;
 	int32		   *k = (int32 *) PG_GETARG_POINTER(0);
-	char		   *buffer = (char *) palloc(1024);
+	char		   *buffer;
 
-	sprintf(buffer, "(%.9f,%.9f,%.9f),(%.9f,%.9f,%.9f)",
-			k[0] / ks, k[1] / ks, k[2] / ks,
-			k[3] / ks, k[4] / ks, k[5] / ks);
+	buffer = psprintf("(%.9f,%.9f,%.9f),(%.9f,%.9f,%.9f)",
+					  k[0] / ks, k[1] / ks, k[2] / ks,
+					  k[3] / ks, k[4] / ks, k[5] / ks);
 
 	PG_RETURN_CSTRING(buffer);
 
@@ -175,17 +175,17 @@ pointkey_out(PG_FUNCTION_ARGS)
 {
 	const float8	ks = (float8) MAXCVALUE;
 	GiSTSPointKey  *k = (GiSTSPointKey *) PG_GETARG_POINTER(0);
-	char		   *buffer = (char *) palloc(1024);
+	char		   *buffer;
 
 	if (IS_LEAF(k))
 	{
-		sprintf(buffer, "(%.9f,%.9f)", k->lng, k->lat);
+		buffer = psprintf("(%.9f,%.9f)", k->lng, k->lat);
 	}
 	else
 	{
-		sprintf(buffer,	"(%.9f,%.9f,%.9f),(%.9f,%.9f,%.9f)",
-				k->k[0] / ks, k->k[1] / ks, k->k[2] / ks,
-				k->k[3] / ks, k->k[4] / ks,	k->k[5] / ks);
+		buffer = psprintf("(%.9f,%.9f,%.9f),(%.9f,%.9f,%.9f)",
+						  k->k[0] / ks, k->k[1] / ks, k->k[2] / ks,
+						  k->k[3] / ks, k->k[4] / ks, k->k[5] / ks);
 	}
 
 	PG_RETURN_CSTRING(buffer);

@@ -95,9 +95,8 @@ static double human2dec(double d, double m, double s)
 {
 	if (m < 0 || m >= 60 || s < 0 || s >= 60)
 	{
-		char err[255];
-		sprintf(err, "minutes or seconds invalid (min:%f sec:%f)", m, s);
-		sphere_yyerror(err);
+		sphere_yyerror(psprintf("minutes or seconds invalid (min:%f sec:%f)",
+								m, s));
 		return 0;
 	}
 	else

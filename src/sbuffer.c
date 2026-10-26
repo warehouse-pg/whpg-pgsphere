@@ -367,12 +367,15 @@ get_box(double *lng1, double *lat1, double *lng2, double *lat2)
 int
 get_buffer(char *buf, int offset)
 {
-	int slen = strlen(parse_buffer);
+	int			slen;
 
-	if (!parse_buffer || !(slen > 0))
-	{
+	/* reset_buffer() leaves parse_buffer NULL; check before strlen() */
+	if (!parse_buffer)
 		return 0;
-	}
+
+	slen = strlen(parse_buffer);
+	if (slen <= 0)
+		return 0;
 
 	if (slen >= offset)
 	{

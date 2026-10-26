@@ -72,6 +72,9 @@ SELECT smoc('');
 SELECT smoc('abc');         -- expected: error
 SELECT smoc('-1/');         -- expected: error
 SELECT smoc('30/');         -- expected: error
+SELECT smoc('99999999999999999999/');  -- expected: error (too large for an order)
+SELECT smoc('1/99999999999999999999'); -- expected: error (too large for an index)
+SELECT smoc('4294967296/');            -- expected: error (order is checked before truncation to int)
 SELECT smoc('0/');
 SELECT smoc('0/0-3,7');
 SELECT smoc('0/0,1,2,3,7');
@@ -82,6 +85,9 @@ SELECT ''::smoc;
 SELECT 'abc'::smoc;         -- expected: error
 SELECT '-1/'::smoc;         -- expected: error
 SELECT '30/'::smoc;         -- expected: error
+SELECT '99999999999999999999/'::smoc;  -- expected: error (too large for an order)
+SELECT '1/99999999999999999999'::smoc; -- expected: error (too large for an index)
+SELECT '4294967296/'::smoc;            -- expected: error (order is checked before truncation to int)
 SELECT '0/'::smoc;          -- expected: '0/'
 SELECT '0/0-3,7'::smoc;     -- expected: '0/0-3,7'
 SELECT '0/0,1,2,3,7'::smoc; -- expected: '0/0-3,7'

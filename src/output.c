@@ -251,7 +251,6 @@ Datum
 set_sphere_output_precision(PG_FUNCTION_ARGS)
 {
 	short int	c = PG_GETARG_INT16(0);
-	char	   *buf = (char *) palloc(20);
 
 	if (c > DBL_DIG)
 		c = DBL_DIG;
@@ -259,27 +258,21 @@ set_sphere_output_precision(PG_FUNCTION_ARGS)
 		c = DBL_DIG;
 	sphere_output_precision = c;
 
-	sprintf(buf, "SET %d", c);
-	PG_RETURN_CSTRING(buf);
+	PG_RETURN_CSTRING(psprintf("SET %d", c));
 }
 
 Datum
 reset_sphere_output_precision(PG_FUNCTION_ARGS)
 {
-	char	   *buf = (char *) palloc(20);
-
 	sphere_output_precision = INT_MAX;
 
-	sprintf(buf, "RESET");
-
-	PG_RETURN_CSTRING(buf);
+	PG_RETURN_CSTRING(pstrdup("RESET"));
 }
 
 Datum
 set_sphere_output(PG_FUNCTION_ARGS)
 {
 	char	   *c = PG_GETARG_CSTRING(0);
-	char	   *buf = (char *) palloc(20);
 
 	if (strcmp(c, "RAD") == 0)
 	{
@@ -300,18 +293,16 @@ set_sphere_output(PG_FUNCTION_ARGS)
 	else
 	{
 		elog(ERROR, "Unknown format");
-		pfree(buf);
 		PG_RETURN_NULL();
 	}
-	sprintf(buf, "SET %s", c);
-	PG_RETURN_CSTRING(buf);
+	PG_RETURN_CSTRING(psprintf("SET %s", c));
 }
 
 static Datum
 spherepoint_out_compat(PG_FUNCTION_ARGS)
 {
 	SPoint		   *sp = (SPoint *) PG_GETARG_POINTER(0);
-	char		   *buffer = (char *) palloc(255);
+	StringInfoData	si;
 	unsigned int	latdeg,
 					latmin,
 					lngdeg,
@@ -322,42 +313,44 @@ spherepoint_out_compat(PG_FUNCTION_ARGS)
 	latdeg = latmin = lngdeg = lngmin = 0;
 	latsec = lngsec = 0.0;
 
+	initStringInfo(&si);
+
 	switch (sphere_output)
 	{
 		case OUTPUT_DEG:
-			sprintf(buffer, "(%.*gd , %.*gd)",
-					sphere_output_precision, RADIANS * sp->lng,
-					sphere_output_precision, RADIANS * sp->lat);
+			appendStringInfo(&si, "(%.*gd , %.*gd)",
+							 sphere_output_precision, RADIANS * sp->lng,
+							 sphere_output_precision, RADIANS * sp->lat);
 			break;
 
 		case OUTPUT_DMS:
 			rad_to_dms(sp->lng, &lngdeg, &lngmin, &lngsec);
 			rad_to_dms(sp->lat, &latdeg, &latmin, &latsec);
-			sprintf(buffer,
-					"(%3ud %2um %.*gs , %c%2ud %2um %.*gs)",
-					lngdeg, lngmin, sphere_output_precision, lngsec,
-					(sp->lat < 0) ? ('-') : ('+'),
-					latdeg, latmin, sphere_output_precision, latsec);
+			appendStringInfo(&si,
+							 "(%3ud %2um %.*gs , %c%2ud %2um %.*gs)",
+							 lngdeg, lngmin, sphere_output_precision, lngsec,
+							 (sp->lat < 0) ? ('-') : ('+'),
+							 latdeg, latmin, sphere_output_precision, latsec);
 			break;
 
 		case OUTPUT_HMS:
 			rad_to_dms(sp->lng / 15, &lngdeg, &lngmin, &lngsec);
 			rad_to_dms(sp->lat, &latdeg, &latmin, &latsec);
-			sprintf(buffer,
-					"(%3uh %2um %.*gs , %c%2ud %2um %.*gs)",
-					lngdeg, lngmin, sphere_output_precision, lngsec,
-					(sp->lat < 0) ? ('-') : ('+'),
-					latdeg, latmin, sphere_output_precision, latsec);
+			appendStringInfo(&si,
+							 "(%3uh %2um %.*gs , %c%2ud %2um %.*gs)",
+							 lngdeg, lngmin, sphere_output_precision, lngsec,
+							 (sp->lat < 0) ? ('-') : ('+'),
+							 latdeg, latmin, sphere_output_precision, latsec);
 			break;
 
 		default:
-			sprintf(buffer, "(%.*g , %.*g)",
-					sphere_output_precision, sp->lng,
-					sphere_output_precision, sp->lat);
+			appendStringInfo(&si, "(%.*g , %.*g)",
+							 sphere_output_precision, sp->lng,
+							 sphere_output_precision, sp->lat);
 			break;
 	}
 
-	PG_RETURN_CSTRING(buffer);
+	PG_RETURN_CSTRING(si.data);
 }
 
 static void
@@ -443,7 +436,7 @@ static Datum
 spherecircle_out_compat(PG_FUNCTION_ARGS)
 {
 	SCIRCLE    *c = (SCIRCLE *) PG_GETARG_POINTER(0);
-	char	   *buffer = (char *) palloc(255);
+	StringInfoData si;
 	char	   *pointstr = DatumGetPointer(
 								DirectFunctionCall1(spherepoint_out,
 													PointerGetDatum(&c->center)));
@@ -456,33 +449,35 @@ spherecircle_out_compat(PG_FUNCTION_ARGS)
 	rdeg = rmin = 0;
 	rsec = 0.0;
 
+	initStringInfo(&si);
+
 	switch (sphere_output)
 	{
 
 		case OUTPUT_DEG:
-			sprintf(buffer, "<%s , %.*gd>",
-					pointstr, sphere_output_precision,
-					RADIANS * c->radius);
+			appendStringInfo(&si, "<%s , %.*gd>",
+							 pointstr, sphere_output_precision,
+							 RADIANS * c->radius);
 			break;
 
 		case OUTPUT_HMS:
 		case OUTPUT_DMS:
 			rad_to_dms(c->radius, &rdeg, &rmin, &rsec);
-			sprintf(buffer,
-					"<%s , %2ud %2um %.*gs>",
-					pointstr,
-					rdeg, rmin, sphere_output_precision, rsec);
+			appendStringInfo(&si,
+							 "<%s , %2ud %2um %.*gs>",
+							 pointstr,
+							 rdeg, rmin, sphere_output_precision, rsec);
 			break;
 
 		default:
-			sprintf(buffer,	"<%s , %.*g>",
-					pointstr, sphere_output_precision, c->radius);
+			appendStringInfo(&si, "<%s , %.*g>",
+							 pointstr, sphere_output_precision, c->radius);
 			break;
 	}
 
 	pfree(pointstr);
 
-	PG_RETURN_CSTRING(buffer);
+	PG_RETURN_CSTRING(si.data);
 }
 
 static void
@@ -563,7 +558,7 @@ static Datum
 sphereellipse_out_compat(PG_FUNCTION_ARGS)
 {
 	SELLIPSE   *e = (SELLIPSE *) PG_GETARG_POINTER(0);
-	char	   *buffer = (char *) palloc(255);
+	StringInfoData si;
 	char	   *pointstr;
 	unsigned int rdeg[3],
 				rmin[3];
@@ -576,16 +571,18 @@ sphereellipse_out_compat(PG_FUNCTION_ARGS)
 	pointstr = DatumGetPointer(DirectFunctionCall1(spherepoint_out,
 												   PointerGetDatum(&sp)));
 
+	initStringInfo(&si);
+
 	switch (sphere_output)
 	{
 
 		case OUTPUT_DEG:
-			sprintf(buffer,
-					"<{ %.*gd , %.*gd }, %s , %.*gd>",
-					sphere_output_precision, RADIANS * (e->rad[0]),
-					sphere_output_precision, RADIANS * (e->rad[1]),
-					pointstr,
-					sphere_output_precision, RADIANS * (e->phi));
+			appendStringInfo(&si,
+							 "<{ %.*gd , %.*gd }, %s , %.*gd>",
+							 sphere_output_precision, RADIANS * (e->rad[0]),
+							 sphere_output_precision, RADIANS * (e->rad[1]),
+							 pointstr,
+							 sphere_output_precision, RADIANS * (e->phi));
 			break;
 
 		case OUTPUT_HMS:
@@ -593,27 +590,26 @@ sphereellipse_out_compat(PG_FUNCTION_ARGS)
 			rad_to_dms(e->rad[0], &rdeg[0], &rmin[0], &rsec[0]);
 			rad_to_dms(e->rad[1], &rdeg[1], &rmin[1], &rsec[1]);
 			rad_to_dms(e->phi, &rdeg[2], &rmin[2], &rsec[2]);
-			sprintf(buffer,
-					"<{ %2ud %2um %.*gs , %2ud %2um %.*gs }, %s , %2ud %2um %.*gs>",
-					rdeg[0], rmin[0], sphere_output_precision, rsec[0],
-					rdeg[1], rmin[1], sphere_output_precision, rsec[1],
-					pointstr,
-					rdeg[2], rmin[2], sphere_output_precision, rsec[2]);
+			appendStringInfo(&si,
+							 "<{ %2ud %2um %.*gs , %2ud %2um %.*gs }, %s , %2ud %2um %.*gs>",
+							 rdeg[0], rmin[0], sphere_output_precision, rsec[0],
+							 rdeg[1], rmin[1], sphere_output_precision, rsec[1],
+							 pointstr,
+							 rdeg[2], rmin[2], sphere_output_precision, rsec[2]);
 			break;
 
 		default:
-			sprintf(
-				buffer,
-				"<{ %.*g , %.*g }, %s , %.*g>",
-				sphere_output_precision, e->rad[0],
-				sphere_output_precision, e->rad[1],
-				pointstr,
-				sphere_output_precision, e->phi);
+			appendStringInfo(&si,
+							 "<{ %.*g , %.*g }, %s , %.*g>",
+							 sphere_output_precision, e->rad[0],
+							 sphere_output_precision, e->rad[1],
+							 pointstr,
+							 sphere_output_precision, e->phi);
 			break;
 	}
 
 	pfree(pointstr);
-	PG_RETURN_CSTRING(buffer);
+	PG_RETURN_CSTRING(si.data);
 }
 
 static void
@@ -700,7 +696,7 @@ static Datum
 sphereline_out_compat(PG_FUNCTION_ARGS)
 {
 	SLine		   *sl = (SLine *) PG_GETARG_POINTER(0);
-	char		   *out = (char *) palloc(255);
+	StringInfoData	si;
 	char		   *tstr = NULL;
 	SEuler			se;
 
@@ -718,32 +714,34 @@ sphereline_out_compat(PG_FUNCTION_ARGS)
 	tstr = DatumGetPointer(DirectFunctionCall1(spheretrans_out,
 											   PointerGetDatum(&se)));
 
+	initStringInfo(&si);
+
 	switch (sphere_output)
 	{
 		case OUTPUT_DEG:
-			sprintf(out,
-					"( %s ), %.*gd",
-					tstr, sphere_output_precision, RADIANS * sl->length
-				);
+			appendStringInfo(&si,
+							 "( %s ), %.*gd",
+							 tstr, sphere_output_precision, RADIANS * sl->length);
 			break;
 
 		case OUTPUT_HMS:
 		case OUTPUT_DMS:
 			rad_to_dms(sl->length, &rdeg, &rmin, &rsec);
-			sprintf(out,
-					"( %s ), %2ud %2um %.*gs",
-					tstr, rdeg, rmin, sphere_output_precision, rsec);
+			appendStringInfo(&si,
+							 "( %s ), %2ud %2um %.*gs",
+							 tstr, rdeg, rmin, sphere_output_precision, rsec);
 			break;
 
 		default:
-			sprintf(out,
-					"( %s ), %.*g",
-					tstr, sphere_output_precision, sl->length
-				);
+			appendStringInfo(&si,
+							 "( %s ), %.*g",
+							 tstr, sphere_output_precision, sl->length);
 			break;
 	}
 
-	PG_RETURN_CSTRING(out);
+	pfree(tstr);
+
+	PG_RETURN_CSTRING(si.data);
 }
 
 Datum
@@ -792,9 +790,8 @@ static Datum
 spheretrans_out_compat(PG_FUNCTION_ARGS)
 {
 	SEuler	   *se = (SEuler *) PG_GETARG_POINTER(0);
-	char	   *buffer = (char *) palloc(255);
-	char		buf[100];
-	char		etype[4];
+	StringInfoData si;
+	char		etype[4] = {0, 0, 0, 0};
 	SPoint		val[3];
 	unsigned char i,
 				t = 0;
@@ -811,7 +808,8 @@ spheretrans_out_compat(PG_FUNCTION_ARGS)
 	spoint_check(&val[1]);
 	spoint_check(&val[2]);
 
-	buffer[0] = '\0';
+	initStringInfo(&si);
+
 	for (i = 0; i < 3; i++)
 	{
 
@@ -821,25 +819,24 @@ spheretrans_out_compat(PG_FUNCTION_ARGS)
 		{
 
 			case OUTPUT_DEG:
-				sprintf(&buf[0],
-						"%.*gd",
-						sphere_output_precision, RADIANS * val[i].lng);
+				appendStringInfo(&si,
+								 "%.*gd",
+								 sphere_output_precision, RADIANS * val[i].lng);
 				break;
 
 			case OUTPUT_HMS:
 			case OUTPUT_DMS:
 				rad_to_dms(val[i].lng, &rdeg, &rmin, &rsec);
-				sprintf(&buf[0],
-						"%2ud %2um %.*gs",
-						rdeg, rmin, sphere_output_precision, rsec);
+				appendStringInfo(&si,
+								 "%2ud %2um %.*gs",
+								 rdeg, rmin, sphere_output_precision, rsec);
 				break;
 
 			default:
-				sprintf(&buf[0], "%.*g", sphere_output_precision, val[i].lng);
+				appendStringInfo(&si, "%.*g", sphere_output_precision, val[i].lng);
 				break;
 		}
-		strcat(&buf[0], ", ");
-		strcat(buffer, &buf[0]);
+		appendStringInfoString(&si, ", ");
 	}
 	for (i = 0; i < 3; i++)
 	{
@@ -869,9 +866,9 @@ spheretrans_out_compat(PG_FUNCTION_ARGS)
 		}
 	}
 	etype[3] = '\0';
-	strcat(buffer, etype);
+	appendStringInfoString(&si, etype);
 
-	PG_RETURN_CSTRING(buffer);
+	PG_RETURN_CSTRING(si.data);
 }
 
 static void
@@ -988,23 +985,23 @@ spherepath_out_compat(PG_FUNCTION_ARGS)
 {
 	SPATH	   *path = PG_GETARG_SPATH(0);
 	int32		i;
-	char	   *out = (char *) palloc(128 * path->npts);
+	StringInfoData si;
 	char	   *tmp;
 
-	strcpy(out, "{");
+	initStringInfo(&si);
+
+	appendStringInfoChar(&si, '{');
 	for (i = 0; i < path->npts; i++)
 	{
 		if (i > 0)
-		{
-			strcat(out, ",");
-		}
+			appendStringInfoChar(&si, ',');
 		tmp = DatumGetPointer(DirectFunctionCall1(spherepoint_out,
 												  PointerGetDatum(&path->p[i])));
-		strcat(out, tmp);
+		appendStringInfoString(&si, tmp);
 		pfree(tmp);
 	}
-	strcat(out, "}");
-	PG_RETURN_CSTRING(out);
+	appendStringInfoChar(&si, '}');
+	PG_RETURN_CSTRING(si.data);
 }
 
 Datum
@@ -1042,23 +1039,23 @@ spherepoly_out_compat(PG_FUNCTION_ARGS)
 {
 	SPOLY	   *poly = PG_GETARG_SPOLY(0);
 	int32		i;
-	char	   *out = (char *) palloc(128 * poly->npts);
+	StringInfoData si;
 	char	   *tmp;
 
-	strcpy(out, "{");
+	initStringInfo(&si);
+
+	appendStringInfoChar(&si, '{');
 	for (i = 0; i < poly->npts; i++)
 	{
 		if (i > 0)
-		{
-			strcat(out, ",");
-		}
+			appendStringInfoChar(&si, ',');
 		tmp = DatumGetPointer(DirectFunctionCall1(spherepoint_out,
 												  PointerGetDatum(&poly->p[i])));
-		strcat(out, tmp);
+		appendStringInfoString(&si, tmp);
 		pfree(tmp);
 	}
-	strcat(out, "}");
-	PG_RETURN_CSTRING(out);
+	appendStringInfoChar(&si, '}');
+	PG_RETURN_CSTRING(si.data);
 }
 
 Datum
@@ -1095,15 +1092,14 @@ static Datum
 spherebox_out_compat(PG_FUNCTION_ARGS)
 {
 	SBOX	   *box = (SBOX *) PG_GETARG_POINTER(0);
-	char	   *buffer = (char *) palloc(255);
 	char	   *str1 = DatumGetPointer(
 							DirectFunctionCall1(spherepoint_out,
 												PointerGetDatum(&box->sw)));
 	char	   *str2 = DatumGetPointer(
 							DirectFunctionCall1(spherepoint_out,
 												PointerGetDatum(&box->ne)));
+	char	   *buffer = psprintf("(%s, %s)", str1, str2);
 
-	sprintf(buffer, "(%s, %s)", str1, str2);
 	pfree(str1);
 	pfree(str2);
 	PG_RETURN_CSTRING(buffer);
@@ -1137,7 +1133,6 @@ Datum
 pg_sphere_version(PG_FUNCTION_ARGS)
 {
 	const char	*s = PGSPHERE_STRINGIFY(PGSPHERE_VERSION);
-	char		*p = (char *)palloc(strlen(s) + 1);
-	strcpy(p, s);
-	PG_RETURN_CSTRING(p);
+
+	PG_RETURN_CSTRING(pstrdup(s));
 }

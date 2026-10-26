@@ -78,7 +78,7 @@ moc_debug_log(pgs_error_handler error_out, const char *fm, ...)
 	PGS_TRY
 		va_list arguments;
 		va_start(arguments, fm);
-		vsprintf(buffer, fm, arguments);
+		vsnprintf(buffer, sizeof(buffer), fm, arguments);
 		va_end(arguments);
 		log_string().append(buffer);
 	PGS_CATCH
