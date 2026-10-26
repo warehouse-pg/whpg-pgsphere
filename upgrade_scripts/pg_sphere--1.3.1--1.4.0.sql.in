@@ -42,3 +42,14 @@ ALTER FUNCTION spoly_deg(float8[]) IMMUTABLE STRICT PARALLEL SAFE;
 -- update comment on spoly_deg function
 COMMENT ON FUNCTION spoly_deg(float8[]) IS
    'creates spoly from array of numbers in degrees';
+
+-- mark = (spoint, spoint) as hashable for the new spoint_hash_ops
+
+set allow_system_table_mods=true;
+UPDATE pg_operator
+   SET oprcanhash = true
+   WHERE oprname = '=' AND
+     oprleft = 'spoint'::regtype AND oprright = 'spoint'::regtype;
+set allow_system_table_mods=false;
+
+/* PG17: ALTER OPERATOR = (spoint, spoint) SET (HASHES); */

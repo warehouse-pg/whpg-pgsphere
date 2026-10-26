@@ -125,7 +125,8 @@ CREATE OPERATOR  = (
    NEGATOR    = <>,
    PROCEDURE  = spoint_equal,
    RESTRICT   = contsel,
-   JOIN       = contjoinsel
+   JOIN       = contjoinsel,
+   HASHES
 );
 
 COMMENT ON OPERATOR = (spoint, spoint) IS
