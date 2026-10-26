@@ -249,3 +249,10 @@ FROM (VALUES
       ('(0, 0)', '(0.1, 0.1)', 0.14),
       ('(0, 0)', '(0.1, 0.1)', 0.15)
      ) sub (a, b, radius);
+
+-- Parse errors must be reported cleanly, not crash the backend:
+-- out-of-range minutes, and a minutes value long enough that the formatted
+-- error message exceeds 255 bytes (used to overflow a stack buffer).
+SELECT '(1d 70m, 0d)'::spoint;
+SELECT ('(1d ' || repeat('9', 300) || '.0m, 0d)')::spoint;
+SELECT '(1d 1m, 0d)'::spoint;

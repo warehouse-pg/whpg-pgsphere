@@ -124,10 +124,11 @@ check_number_too_large(hpint64 nb, int ind, void *moc_in_context)
 	{
 		release_moc_in_context(moc_in_context, moc_error_out);
 		ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-				errmsg("[c.%d] Healpix number too large.", ind - 1),
+				errmsg("[c.%d] Number too large to be a Healpix order or "
+						"index.", ind - 1),
 				errhint("A Healpix order must be between 0 and %d, and a "
-						"Healpix index must be smaller than " MOC_FORMAT_64 ".",
-						HEALPIX_MAX_ORDER, MOC_MAX_NUMBER)));
+						"Healpix index must be smaller than the number of "
+						"pixels at that order.", HEALPIX_MAX_ORDER)));
 	}
 }
 

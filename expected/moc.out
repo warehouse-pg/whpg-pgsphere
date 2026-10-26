@@ -284,6 +284,21 @@ ERROR:  [c.2] Incorrect Healpix order 30.
 LINE 1: SELECT smoc('30/');
                     ^
 HINT:  A valid Healpix order must be an integer between 0 and 29.
+SELECT smoc('99999999999999999999/');  -- expected: error (too large for an order)
+ERROR:  [c.19] Number too large to be a Healpix order or index.
+LINE 1: SELECT smoc('99999999999999999999/');
+                    ^
+HINT:  A Healpix order must be between 0 and 29, and a Healpix index must be smaller than the number of pixels at that order.
+SELECT smoc('1/99999999999999999999'); -- expected: error (too large for an index)
+ERROR:  [c.21] Number too large to be a Healpix order or index.
+LINE 1: SELECT smoc('1/99999999999999999999');
+                    ^
+HINT:  A Healpix order must be between 0 and 29, and a Healpix index must be smaller than the number of pixels at that order.
+SELECT smoc('4294967296/');            -- expected: error (order is checked before truncation to int)
+ERROR:  [c.10] Incorrect Healpix order 4294967296.
+LINE 1: SELECT smoc('4294967296/');
+                    ^
+HINT:  A valid Healpix order must be an integer between 0 and 29.
 SELECT smoc('0/');
  smoc 
 ------
@@ -327,6 +342,21 @@ HINT:  Expected syntax: '{healpix_order}/{healpix_index}[,...] ...', where {heal
 SELECT '30/'::smoc;         -- expected: error
 ERROR:  [c.2] Incorrect Healpix order 30.
 LINE 1: SELECT '30/'::smoc;
+               ^
+HINT:  A valid Healpix order must be an integer between 0 and 29.
+SELECT '99999999999999999999/'::smoc;  -- expected: error (too large for an order)
+ERROR:  [c.19] Number too large to be a Healpix order or index.
+LINE 1: SELECT '99999999999999999999/'::smoc;
+               ^
+HINT:  A Healpix order must be between 0 and 29, and a Healpix index must be smaller than the number of pixels at that order.
+SELECT '1/99999999999999999999'::smoc; -- expected: error (too large for an index)
+ERROR:  [c.21] Number too large to be a Healpix order or index.
+LINE 1: SELECT '1/99999999999999999999'::smoc;
+               ^
+HINT:  A Healpix order must be between 0 and 29, and a Healpix index must be smaller than the number of pixels at that order.
+SELECT '4294967296/'::smoc;            -- expected: error (order is checked before truncation to int)
+ERROR:  [c.10] Incorrect Healpix order 4294967296.
+LINE 1: SELECT '4294967296/'::smoc;
                ^
 HINT:  A valid Healpix order must be an integer between 0 and 29.
 SELECT '0/'::smoc;          -- expected: '0/'
