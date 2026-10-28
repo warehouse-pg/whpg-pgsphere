@@ -67,7 +67,15 @@ PGS_SQL     = pgs_types.sql pgs_point.sql pgs_euler.sql pgs_circle.sql \
               pgs_gist.sql gnomo.sql pgs_brin.sql pgs_circle_sel.sql pgs_hash.sql
 
 ifneq ($(USE_HEALPIX),0)
-TESTS      += healpix moc moc1 moc100 mocautocast
+# USE_HEALPIX_CXX=0 builds the HEALPix/MOC code without libhealpix_cxx; the
+# smoc constructors from a disc or polygon then raise an error, so the tests
+# that call them (moc, mocautocast) are left out.
+USE_HEALPIX_CXX ?= 1
+ifneq ($(USE_HEALPIX_CXX),0)
+MOC_CXX_TESTS      = moc
+MOC_CXX_CAST_TESTS = mocautocast
+endif
+TESTS      += healpix $(MOC_CXX_TESTS) moc1 moc100 $(MOC_CXX_CAST_TESTS)
 PGS_SQL    += healpix.sql
 endif
 
@@ -95,10 +103,15 @@ else
 endif
 
 ifneq ($(USE_HEALPIX),0)
+ifneq ($(USE_HEALPIX_CXX),0)
 # compiler settings for linking with libhealpix_cxx
 PKG_CONFIG ?= pkg-config
 override CPPFLAGS += $(shell $(PKG_CONFIG) --cflags healpix_cxx)
 SHLIB_LINK += $(shell $(PKG_CONFIG) --libs healpix_cxx)
+else
+# MOC support without libhealpix_cxx: smoc from disc/polygon is unavailable
+override CPPFLAGS += -DPGS_NO_HEALPIX_CXX
+endif
 LINK.shared = g++ -shared
 endif
 
